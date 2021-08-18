@@ -2,7 +2,8 @@ from django.contrib import admin
 from .models import Post
 
 
-# @admin.register(Post) выполняет те же действия, что и функция admin.site.register():
+# @admin.register(Post) выполняет те же действия,
+# что и функция admin.site.register():
 # регистрирует декорируемый класс – наследник ModelAdmin.
 class PostAdmin(admin.ModelAdmin):
     list_display = ('title', 'slug', 'author', 'publish', 'status')
