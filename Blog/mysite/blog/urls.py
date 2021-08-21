@@ -6,9 +6,12 @@ app_name = 'blog'
 
 urlpatterns = [
     # post views
-    path('', views.post_list, name='post_list'),
+    path('post_list', views.post_list, name='post_list'),
+    path('post_list_1/', views.MyPaginator.post_list_1, name='post_list_1'),
+    path('post_list_2/', views.MyPaginator.post_list_2, name='post_list_2'),
+    path('post_list_3/', views.MyPaginator.post_list_3, name='post_list_3'),
     path(
-        '<int:year>/<int:month>/<int:day>/<slug:post>/',
+        '<int:year>/<int:month>/<int:day>/<str:author>/<slug:post>/',
         views.post_detail,
         name='post_detail'
     ),
