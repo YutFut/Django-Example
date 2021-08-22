@@ -4,8 +4,8 @@ from django.views.generic import ListView
 from django.core.mail import send_mail
 from django.urls import reverse
 
-from .models import Post, User
-from .forms import EmailPostForm
+from .models import Post, User, Comment
+from .forms import EmailPostForm, CommentForm
 
 
 def post_share(request, post_id):
@@ -33,7 +33,27 @@ def post_share(request, post_id):
             # ]))
     else:
         form = EmailPostForm()
-        return render(request, 'post/post_share.html', {'post': post, 'form': form})
+        context = {'post': post, 'form': form}
+        return render(request, 'post/post_share.html', context)
+
+
+def post_comment(request, post_id):
+    post = get_object_or_404(Post, id=post_id, status='published')
+    if request.method == 'POST':
+        form = CommentForm(request.POST or None)
+        if form.is_valid():
+            comment = Comment.objects.create(
+                post=post,
+                name=form.cleaned_data['name'],
+                email=form.cleaned_data['email'],
+                body=form.cleaned_data['body'],
+            )
+            comment.save()
+            return redirect('/blog/post_list/')
+    else:
+        form = CommentForm()
+        context = {'form': form}
+        return render(request, 'post/post_share.html', context)
 
 
 def post_list(request):

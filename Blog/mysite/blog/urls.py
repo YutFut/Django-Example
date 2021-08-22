@@ -13,4 +13,5 @@ urlpatterns = [
     path('post_list_view/', views.PostListView.as_view(), name='post_list_view'),
     path('<int:year>/<int:month>/<int:day>/<str:author>/<slug:post>/', views.post_detail, name='post_detail'),
     path('<int:post_id>/post_share/', views.post_share, name='post_share'),
+    path('<int:post_id>/post_comment/', views.post_comment, name='post_comment'),
 ]
