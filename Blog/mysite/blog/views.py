@@ -5,7 +5,7 @@ from django.core.mail import send_mail
 from django.urls import reverse
 
 from .models import Post, User, Comment
-from .forms import EmailPostForm, CommentForm
+from .forms import EmailPostForm, CommentForm1, CommentForm
 
 
 def post_share(request, post_id):
@@ -23,24 +23,24 @@ def post_share(request, post_id):
             message = 'Read "{}" at {}\n\n{}\'s comments:{}'.format(post.title, post_url, cd['name'], cd['comments'])
             send_mail(subject, message, 'admin@myblog.com', [cd['to']])
             sent = True
-            return redirect('/blog/post_list/')
-            # return redirect(reverse('post_detail', args=[
-            #     post.publish.year,
-            #     post.publish.month,
-            #     post.publish.day,
-            #     post.author,
-            #     post.slug
-            # ]))
+            return redirect(reverse('blog:post_detail', args=[
+                post.publish.year,
+                post.publish.month,
+                post.publish.day,
+                post.author,
+                post.slug
+            ]))
     else:
         form = EmailPostForm()
         context = {'post': post, 'form': form}
         return render(request, 'post/post_share.html', context)
 
 
+# example of using forms.Form
 def post_comment(request, post_id):
     post = get_object_or_404(Post, id=post_id, status='published')
     if request.method == 'POST':
-        form = CommentForm(request.POST or None)
+        form = CommentForm1(request.POST or None)
         if form.is_valid():
             comment = Comment.objects.create(
                 post=post,
@@ -53,7 +53,23 @@ def post_comment(request, post_id):
     else:
         form = CommentForm()
         context = {'form': form}
-        return render(request, 'post/post_share.html', context)
+        return render(request, 'post/post_comments.html', context)
+
+
+# example of using forms.ModelForm
+def post_comment_1(request, post_id):
+    post = get_object_or_404(Post, id=post_id, status='published')
+    if request.method == 'POST':
+        form = CommentForm(request.POST or None)
+        if form.is_valid():
+            comment = form.save(commit=False)
+            comment.post = post
+            comment.save()
+            return redirect('/blog/post_list/')
+    else:
+        form = CommentForm()
+        context = {'form': form}
+        return render(request, 'post/post_comments.html', context)
 
 
 def post_list(request):
@@ -130,3 +146,40 @@ def post_detail(request, year, month, day, author, post):
     )
     context = {'post': post}
     return render(request, 'post/post_detail.html', context)
+
+
+def post_detail_comments(request, year, month, day, author, post):
+    post = get_object_or_404(Post, slug=post, status='published', publish__year=year,
+                             publish__month=month, publish__day=day)
+    # Список активных комментариев для этой статьи.
+    comments = post.comments.filter(active=True)
+    new_comment = None
+    if request.method == 'POST':
+        # Пользователь отправил комментарий.
+        comment_form = CommentForm(data=request.POST)
+        if comment_form.is_valid():
+            # Создаем комментарий, но пока не сохраняем в базе данных.
+            new_comment = comment_form.save(commit=False)
+            # Привязываем комментарий к текущей статье.
+            new_comment.post = post
+            # Сохраняем комментарий в базе данных.
+            new_comment.save()
+            # return redirect(f'/blog/{post.publish.year}/'
+            #                 f'{post.publish.month}/'
+            #                 f'{post.publish.day}/'
+            #                 f'{post.author}/'
+            #                 f'{post.slug}/post_detail_comments/')
+            return redirect(reverse('blog:post_detail_comments', args=[
+                post.publish.year,
+                post.publish.month,
+                post.publish.day,
+                post.author,
+                post.slug
+            ]))
+    else:
+        comment_form = CommentForm()
+        context = {'post': post,
+                   'comments': comments,
+                   'new_comment': new_comment,
+                   'comment_form': comment_form}
+        return render(request, 'post/post_detail_comments.html', context)
