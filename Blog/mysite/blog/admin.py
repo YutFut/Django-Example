@@ -6,7 +6,7 @@ from .models import Post
 # что и функция admin.site.register():
 # регистрирует декорируемый класс – наследник ModelAdmin.
 class PostAdmin(admin.ModelAdmin):
-    list_display = ('title', 'slug', 'author', 'publish', 'status')
+    list_display = ('id', 'title', 'slug', 'author', 'publish', 'status')
     list_filter = ('status', 'created', 'publish', 'author')
     search_fields = ('title', 'body')
     prepopulated_fields = {'slug': ('title',)}
