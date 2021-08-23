@@ -3,9 +3,12 @@ from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.views.generic import ListView
 from django.core.mail import send_mail
 from django.urls import reverse
+from django.db.models import Count
 
 from .models import Post, User, Comment
 from .forms import EmailPostForm, CommentForm1, CommentForm
+
+from taggit.models import Tag
 
 
 def post_share(request, post_id):
@@ -78,6 +81,26 @@ def post_list(request):
     posts = Post.published.all()
     context = {'posts': posts}
     return render(request, 'post/post_list.html', context)
+
+
+def post_list_tag(request, tag_slug=None):
+    object_list = Post.published.all()
+    tag = None
+    if tag_slug:
+        tag = get_object_or_404(Tag, slug=tag_slug)
+        object_list = object_list.filter(tags__in=[tag])
+    paginator = Paginator(object_list, 3)  # По 3 статьи на каждой странице.
+    page_number = request.GET.get('page')
+    try:
+        page = paginator.page(page_number)
+    except PageNotAnInteger:
+        # Если указанная страница не является целым числом.
+        page = paginator.page(1)
+    except EmptyPage:
+        # Если указанный номер больше, чем всего страниц, возвращаем последнюю.
+        page = paginator.page(paginator.num_pages)
+    context = {'page': page, 'tag': tag}
+    return render(request, 'post/post_list_tag.html', context)
 
 
 # add pagination
@@ -183,3 +206,23 @@ def post_detail_comments(request, year, month, day, author, post):
                    'new_comment': new_comment,
                    'comment_form': comment_form}
         return render(request, 'post/post_detail_comments.html', context)
+
+
+def post_detail_similar_posts(request, year, month, day, author, post):
+    post = get_object_or_404(
+        Post,
+        slug=post,
+        author=get_object_or_404(User, username=author),
+        status='published',
+        publish__year=year,
+        publish__month=month,
+        publish__day=day,
+    )
+    # Формирование списка похожих статей.
+    post_tags_ids = post.tags.values_list('id', flat=True)
+    similar_posts = Post.published.filter(tags__in=post_tags_ids)\
+                                  .exclude(id=post.id)
+    similar_posts = similar_posts.annotate(same_tags=Count('tags'))\
+                                 .order_by('-same_tags', '-publish')[:4]
+    context = {'post': post, 'similar_posts': similar_posts}
+    return render(request, 'post/post_detail_similar_posts.html', context)

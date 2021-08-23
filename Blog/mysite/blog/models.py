@@ -2,6 +2,8 @@ from django.db import models
 from django.utils import timezone
 from django.urls import reverse
 
+from taggit.managers import TaggableManager
+
 from django.contrib.auth.models import User
 
 
@@ -47,6 +49,7 @@ class Post(models.Model):
         choices=STATUS_CHOICES,
         default='draft',
     )
+    tags = TaggableManager()
     objects = models.Manager()  # Менеджер по умолчанию.
     published = PublishedManager()  # Наш новый менеджер.
 

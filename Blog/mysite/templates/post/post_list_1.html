@@ -8,6 +8,7 @@
         </h2>
         <p class="date">Published {{ post.publish }} by {{ post.author }}</p>
         {{ post.body|truncatewords:30|linebreaks }}
+        <p class="tags">Tags: {{ post.tags.all|join:", " }}</p>
     {% endfor %}
     {% include "pagination.html"%}
 {% endblock %}
